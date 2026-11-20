@@ -1,4 +1,4 @@
-// COASTER CLASH 試作 v=1(練習モード: コンピューターと対戦)
+// COASTER CLASH 試作 v=4(練習モード: コンピューターと対戦)
 // ルール: muddys-notes の coaster-clash_spec.md(2026-11-21 のルール)
 'use strict';
 
@@ -9,7 +9,7 @@ const CARD = {
   '-3': 'こぼれたビール', '-5': 'からっぽの財布', '-7': 'お会計', '-10': '二日酔いでダウン',
 };
 const cardImg = v => `cards/card_${v > 0 ? 'plus' + v : 'minus' + (-v)}.webp?v=1`;
-const pcHtml = (v, cls = '') => `<span class="pc ${cls}" style="background-image:url('${cardImg(v)}')" title="${fmt(v)} ${CARD[v]}"></span>`;
+const pcHtml = (v, cls = '', extra = '') => `<span class="pc ${cls}" style="background-image:url('${cardImg(v)}');${extra}" title="${fmt(v)} ${CARD[v]}"></span>`;
 const fmt = v => (v > 0 ? '+' : '−') + Math.abs(v);
 
 // ---------- コースターの絵(デザインは coaster-clash_coaster.html と同じ) ----------
@@ -32,6 +32,9 @@ function coaster(n) { // n = null で裏
 <circle cx="50" cy="50" r="40" fill="none" stroke="${ring}" stroke-width="1.2"/>
 ${guitar(g)}${txt}</svg></div>`;
 }
+
+// 点数カードの裏(Muddy's Games のロゴ。デニムにワッペン)。回るときに見える
+const CARD_BACK = `<img src="cardback.webp?v=4" alt="" style="width:100%;height:100%;display:block">`;
 
 // ---------- ルール ----------
 function makePoints(N) {
@@ -131,7 +134,16 @@ function startGame() {
     players: [{ name, me: true }, ...names.map(nm => ({ name: nm, me: false }))].map(p => ({ ...p, hand: [...Array(cfg.N).keys()], score: 0, got: [] })),
     order: makePoints(cfg.N), r: 0, pot: [], pick: null, cpuPick: [],
   };
-  beginRound();
+  showLineup();
+}
+
+// 試合の最初: その試合の点数カードを全部、大きく並べる
+function showLineup() {
+  const all = G.order.slice().sort((a, b) => b - a);
+  $('lineup').innerHTML = all.map((v, i) => pcHtml(v, '', `animation-delay:${i * 60}ms`)).join('');
+  const plus = all.filter(v => v > 0).reduce((a, v) => a + v, 0), minus = all.filter(v => v < 0).reduce((a, v) => a + v, 0);
+  $('lineupSum').textContent = `プラス 合計 +${plus}点 / マイナス 合計 ${minus}点 / ${G.N}回勝負`;
+  show('scr-lineup');
 }
 
 function potValue() { return G.pot.reduce((a, v) => a + v, 0); }
@@ -164,6 +176,21 @@ function beginRound() {
   G.players.forEach((p, i) => { if (!p.me) later(() => { G.decided[i] = true; drawBoard($('board'), G.decided); }, 500 + Math.random() * 1800); });
   drawHand();
   show('scr-pick');
+  showIntro(v);
+}
+
+// 毎回の最初: 点数カードを大きく出して、少しして消す
+function showIntro(v) {
+  const el = $('intro');
+  $('introRn').textContent = `${G.r + 1} / ${G.N} 回目`;
+  $('introBig').className = 'big' + (G.pot.length > 1 ? ' many' : '');
+  $('introBig').innerHTML = G.pot.map((x, i) => `<div class="spin" style="animation-delay:${i * 180}ms">${pcHtml(x)}<div class="cback">${CARD_BACK}</div></div>`).join('');
+  $('introT').innerHTML = `次は <b class="${v < 0 ? 'm' : ''}">${fmt(v)} ${CARD[v]}</b> だ!`;
+  $('introC').textContent = G.pot.length > 1 ? `持ちこしつき! 合わせて ${potValue() > 0 ? '+' : ''}${potValue()}点` : '';
+  el.classList.remove('hide', 'out');
+  const close = () => { el.classList.add('out'); setTimeout(() => el.classList.add('hide'), 350); };
+  el.onclick = close;
+  later(close, 2200 + (G.pot.length - 1) * 180);
 }
 
 function drawHand() {
@@ -255,6 +282,7 @@ cfg.N = recHand(cfg.n);
 drawTitle();
 $('btnStart').onclick = startGame;
 $('btnGo').onclick = go;
+$('btnLineup').onclick = () => beginRound();
 $('btnNext').onclick = nextStep;
 $('btnAgain').onclick = startGame;
 $('btnTop').onclick = () => show('scr-title');

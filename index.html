@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Muddy's Games">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=4">
 </head><body>
 <div id="app">
 
@@ -30,7 +30,16 @@
     <button class="btn sub" id="btnRule">ルールを見る</button>
   </div>
   <p class="foot"><a href="/">Muddy's Games トップ</a> · <a href="/privacy.html">プライバシーポリシー</a></p>
-  <p class="ver">試作 v=1</p>
+  <p class="ver">試作 v=4</p>
+</section>
+
+<!-- 今回のカード(試合の最初) -->
+<section id="scr-lineup" class="scr hide">
+  <h2 class="lineup-t">今回のカードはこれ!</h2>
+  <p class="lineup-s">この中から1枚ずつ出てくるよ(順番はランダム)</p>
+  <div class="lineup" id="lineup"></div>
+  <p class="sum" id="lineupSum"></p>
+  <button class="btn big" id="btnLineup">タップでスタート</button>
 </section>
 
 <!-- 選ぶ画面 -->
@@ -85,6 +94,9 @@
   <button class="btn" id="btnRuleClose">とじる</button>
 </div></div>
 
+<!-- 毎回の最初: 点数カードを大きく -->
+<div id="intro" class="intro hide"><p class="rn" id="introRn"></p><div class="big" id="introBig"></div><p class="it" id="introT"></p><p class="ic" id="introC"></p></div>
+
 <!-- 確かめ -->
 <div id="askBox" class="modal hide"><div class="modal-in ask">
   <p id="askT">ゲームをやめますか?</p>
@@ -92,5 +104,5 @@
 </div></div>
 
 </div>
-<script src="main.js?v=1"></script>
+<script src="main.js?v=4"></script>
 </body></html>
