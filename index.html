@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<title>COASTER CLASH｜Muddy's Games</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#2b1a10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Muddy's Games">
+<link rel="stylesheet" href="style.css?v=1">
+</head><body>
+<div id="app">
+
+<!-- 最初の画面 -->
+<section id="scr-title" class="scr">
+  <h1 class="logo">COASTER<br>CLASH<span class="dot">.</span></h1>
+  <p class="kana">コースタークラッシュ</p>
+  <div class="hero-co" id="heroCo"></div>
+  <div class="panel">
+    <h2>練習モード(コンピューターと対戦)</h2>
+    <label class="row">名前<input id="inName" maxlength="8" value="あなた"></label>
+    <div class="row">人数<div class="seg" id="segN"></div></div>
+    <div class="row">手札<div class="seg" id="segH"></div></div>
+    <p class="hint" id="hintH"></p>
+    <div class="row">相手の強さ<div class="seg" id="segL"></div></div>
+    <button class="btn big" id="btnStart">▶ スタート</button>
+    <button class="btn sub" id="btnRule">ルールを見る</button>
+  </div>
+  <p class="foot"><a href="/">Muddy's Games トップ</a> · <a href="/privacy.html">プライバシーポリシー</a></p>
+  <p class="ver">試作 v=1</p>
+</section>
+
+<!-- 選ぶ画面 -->
+<section id="scr-pick" class="scr hide">
+  <div class="topbar"><span id="roundNo"></span><button class="mini" id="btnQuit">やめる</button></div>
+  <div class="next">
+    <p class="next-t" id="nextT"></p>
+    <div class="pot" id="pot"></div>
+    <p class="carry" id="carryT"></p>
+  </div>
+  <div class="remain-wrap"><p class="lbl">のこりの点数カード</p><div class="remain" id="remain"></div></div>
+  <div class="board" id="board"></div>
+  <p class="lbl">あなたのコースター</p>
+  <div class="hand" id="hand"></div>
+  <button class="btn big" id="btnGo" disabled>コースターを選んでね</button>
+</section>
+
+<!-- 結果発表 -->
+<section id="scr-res" class="scr hide">
+  <div class="topbar"><span id="roundNo2"></span></div>
+  <p class="seno" id="seno">せーの!</p>
+  <div class="pot small" id="pot2"></div>
+  <div class="reveal" id="reveal"></div>
+  <p class="msg" id="msg"></p>
+  <div class="board" id="board2"></div>
+  <button class="btn big hide" id="btnNext">次へ</button>
+</section>
+
+<!-- 最終結果 -->
+<section id="scr-end" class="scr hide">
+  <h2 class="neon-t">最終結果</h2>
+  <div class="rank" id="rank"></div>
+  <p class="msg" id="lost"></p>
+  <button class="btn big" id="btnAgain">もう一度</button>
+  <button class="btn sub" id="btnTop">最初の画面へ</button>
+</section>
+
+<!-- ルール -->
+<div id="ruleBox" class="modal hide"><div class="modal-in">
+  <h2>ルール</h2>
+  <ol>
+    <li>全員が同じコースター(0〜)を持っています。</li>
+    <li>点数カードが1枚出たら、全員が1枚ずつコースターを選んで、同時に出します。</li>
+    <li><b>だれかと数字がかぶったら</b>、0 を出した人が取ります(0 が1人のときだけ)。</li>
+    <li>そうでなければ、<b>いちばん大きい数</b>の人が取ります。</li>
+    <li>いちばん大きい数がかぶったら、だれも取れず<b>次に持ちこし</b>。</li>
+    <li>マイナスのカードも同じ。取った人がマイナス。</li>
+    <li>点数カードは最初に全部見えています。出る順番はランダム。</li>
+    <li>全部終わって、合計点がいちばん多い人の勝ち!</li>
+  </ol>
+  <p class="hint">2人のときは、0 はただのいちばん弱いカードです。</p>
+  <button class="btn" id="btnRuleClose">とじる</button>
+</div></div>
+
+<!-- 確かめ -->
+<div id="askBox" class="modal hide"><div class="modal-in ask">
+  <p id="askT">ゲームをやめますか?</p>
+  <div class="ask-b"><button class="btn sub" id="askNo">いいえ</button><button class="btn" id="askYes">はい</button></div>
+</div></div>
+
+</div>
+<script src="main.js?v=1"></script>
+</body></html>

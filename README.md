@@ -1,1 +1,7 @@
-# coaster-clash
+# COASTER CLASH
+
+Muddy's Games の、2〜8人で数字のコースターを出し合って点数カードを取り合うゲーム(作成中)。
+
+- いまは試作 v=1(練習モード: コンピューターと対戦)だけ。オンライン対戦はまだ
+- 仕様・引き継ぎのメモは `muddys-notes` の `coaster-clash/` にある
+- `tools/sim.mjs` はルールを決めるためのシミュレーター(ゲームでは使わない)
