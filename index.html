@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Muddy's Games">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head><body>
 <div id="app">
 
@@ -30,7 +30,7 @@
     <button class="btn sub" id="btnRule">ルールを見る</button>
   </div>
   <p class="foot"><a href="/">Muddy's Games トップ</a> · <a href="/privacy.html">プライバシーポリシー</a></p>
-  <p class="ver">試作 v=4</p>
+  <p class="ver">試作 v=5</p>
 </section>
 
 <!-- 今回のカード(試合の最初) -->
@@ -39,7 +39,26 @@
   <p class="lineup-s">この中から1枚ずつ出てくるよ(順番はランダム)</p>
   <div class="lineup" id="lineup"></div>
   <p class="sum" id="lineupSum"></p>
-  <button class="btn big" id="btnLineup">タップでスタート</button>
+  <button class="btn big" id="btnLineup">特殊カードをえらぶ</button>
+</section>
+
+<!-- 特殊カードを選ぶ -->
+<section id="scr-sp" class="scr hide">
+  <h2 class="sp-t">特殊カードを1枚えらんでね</h2>
+  <p class="sp-s">好きな回に、1回だけ使えるよ</p>
+  <div class="lineup-mini" id="spLineup"></div>
+  <div class="sp-pick" id="spPick"></div>
+  <p class="sp-note" id="spNote"></p>
+  <button class="btn big" id="btnSp" disabled>カードを選んでね</button>
+</section>
+
+<!-- みんなの特殊カード -->
+<section id="scr-who" class="scr hide">
+  <h2 class="sp-t">みんなの特殊カード</h2>
+  <p class="sp-s">だれが、いつ使うかな?</p>
+  <div class="who" id="who"></div>
+  <p class="cnt" id="whoCnt"></p>
+  <button class="btn big" id="btnWho">タップでスタート</button>
 </section>
 
 <!-- 選ぶ画面 -->
@@ -52,8 +71,9 @@
   </div>
   <div class="remain-wrap"><p class="lbl">のこりの点数カード</p><div class="remain" id="remain"></div></div>
   <div class="board" id="board"></div>
+  <p class="rule2 hide" id="rule2"></p>
   <p class="lbl">あなたのコースター</p>
-  <div class="hand" id="hand"></div>
+  <div class="hand-row"><div class="mysp" id="mysp"></div><div class="hand" id="hand"></div></div>
   <button class="btn big" id="btnGo" disabled>コースターを選んでね</button>
 </section>
 
@@ -83,19 +103,29 @@
   <ol>
     <li>全員が同じコースター(0〜)を持っています。</li>
     <li>点数カードが1枚出たら、全員が1枚ずつコースターを選んで、同時に出します。</li>
-    <li><b>だれかと数字がかぶったら</b>、0 を出した人が取ります(0 が1人のときだけ)。</li>
-    <li>そうでなければ、<b>いちばん大きい数</b>の人が取ります。</li>
-    <li>いちばん大きい数がかぶったら、だれも取れず<b>次に持ちこし</b>。</li>
+    <li><b>だれかと数字がかぶっていて</b>、0 を出したのが1人なら、<b>0 の人</b>が取ります。</li>
+    <li>そうでなければ、かぶった数はとばして、<b>かぶっていない中でいちばん大きい数</b>の人が取ります(0 はいちばん弱い)。</li>
+    <li>全員かぶったら、だれも取れず<b>次に持ちこし</b>。最後の回の持ちこしは、だれのものにもなりません。</li>
     <li>マイナスのカードも同じ。取った人がマイナス。</li>
     <li>点数カードは最初に全部見えています。出る順番はランダム。</li>
-    <li>全部終わって、合計点がいちばん多い人の勝ち!</li>
+    <li>全部終わって、合計点がいちばん多い人の勝ち! 同点なら、取ったカードが多い人が上。</li>
   </ol>
-  <p class="hint">2人のときは、0 はただのいちばん弱いカードです。</p>
+  <h3>特殊カード</h3>
+  <p class="hint">最初に1人1枚選んで、みんなに見せます。好きな回に1回だけ、コースターといっしょに出せます。</p>
+  <ul>
+    <li><b>下剋上</b>: その回は、小さい数ほど強い(0 は弱いまま)。</li>
+    <li><b>ハッピーアワー</b>: 使った人が取ったら、点数が2倍(マイナスも2倍)。持ちこしになったら2倍はなし。</li>
+    <li><b>2軒目</b>: その回は、かぶっていない中で2番目に強い数の人が取る。</li>
+  </ul>
+  <p class="hint">2人のときは、相手がいちばん大きい数か2番目に大きい数(10枚なら 8・9)を出したら、0 の人が取ります。下剋上の回は 1・2。2軒目はありません。</p>
   <button class="btn" id="btnRuleClose">とじる</button>
 </div></div>
 
 <!-- 毎回の最初: 点数カードを大きく -->
 <div id="intro" class="intro hide"><p class="rn" id="introRn"></p><div class="big" id="introBig"></div><p class="it" id="introT"></p><p class="ic" id="introC"></p></div>
+
+<!-- 特殊カードの帯 -->
+<div id="band" class="band-wrap hide"><div class="band" id="bandIn"></div></div>
 
 <!-- 確かめ -->
 <div id="askBox" class="modal hide"><div class="modal-in ask">
@@ -104,5 +134,5 @@
 </div></div>
 
 </div>
-<script src="main.js?v=4"></script>
+<script src="main.js?v=5"></script>
 </body></html>
