@@ -5,7 +5,7 @@
 //         RULE=S node tools/sim.mjs            (ルールをえらぶ。下を見て)
 //         SPECIAL=1 node tools/sim.mjs skill   (特殊カードありで調べる。special のときはいつもあり)
 //         NS=8,10,13 node tools/sim.mjs skill  (調べる手札の枚数)
-//         HH=self                              (ハッピーアワーを「使った人が取ったときだけ2倍」にする)
+//         HH=all                               (ハッピーアワーを前の案「だれが取っても2倍」にする)
 //         K=2                                  (2人のとき 0 が勝てる「上から何枚」。0 で特別ルールなし)
 // ルール:
 //   S  = いまのルール(2026-11-21 夜): かぶって 0 が1人 → 0。そうでなければ、かぶった数はとばして、いちばん大きい人。2人の特別ルールあり
@@ -33,7 +33,7 @@ export const SPECIALS = ['BOTTOMS', 'HAPPY', 'BARHOP'];
 const SP_JA = { BOTTOMS: '下剋上', HAPPY: 'ハッピーアワー', BARHOP: '2軒目' };
 const specialsFor = n => n === 2 ? ['BOTTOMS', 'HAPPY'] : SPECIALS; // 2人は 2軒目なし
 let USE_SPECIAL = process.env.SPECIAL === '1';
-const HH = process.env.HH || 'all'; // ハッピーアワー: all=だれが取っても2倍 / self=使った人が取ったときだけ2倍
+const HH = process.env.HH || 'self'; // ハッピーアワー: self=使った人が取ったときだけ2倍(決定) / all=だれが取っても2倍(前の案)
 
 // ---- だれが取るか ----
 // plays: 出した数字の配列 / ctx: { n, N, rev(下剋上), second(2軒目) }
