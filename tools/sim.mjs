@@ -5,6 +5,7 @@
 //         RULE=S node tools/sim.mjs            (ルールをえらぶ。下を見て)
 //         SPECIAL=1 node tools/sim.mjs skill   (特殊カードありで調べる。special のときはいつもあり)
 //         NS=8,10,13 node tools/sim.mjs skill  (調べる手札の枚数)
+//         HH=self                              (ハッピーアワーを「使った人が取ったときだけ2倍」にする)
 //         K=2                                  (2人のとき 0 が勝てる「上から何枚」。0 で特別ルールなし)
 // ルール:
 //   S  = いまのルール(2026-11-21 夜): かぶって 0 が1人 → 0。そうでなければ、かぶった数はとばして、いちばん大きい人。2人の特別ルールあり
@@ -32,6 +33,7 @@ export const SPECIALS = ['BOTTOMS', 'HAPPY', 'BARHOP'];
 const SP_JA = { BOTTOMS: '下剋上', HAPPY: 'ハッピーアワー', BARHOP: '2軒目' };
 const specialsFor = n => n === 2 ? ['BOTTOMS', 'HAPPY'] : SPECIALS; // 2人は 2軒目なし
 let USE_SPECIAL = process.env.SPECIAL === '1';
+const HH = process.env.HH || 'all'; // ハッピーアワー: all=だれが取っても2倍 / self=使った人が取ったときだけ2倍
 
 // ---- だれが取るか ----
 // plays: 出した数字の配列 / ctx: { n, N, rev(下剋上), second(2軒目) }
@@ -123,9 +125,11 @@ function resolveC1(plays) {
 
 // 出したものから、その回のルールを作る(同じ特殊カードは重ならない)
 function roundCtx(acts, sp, n, N) {
-  const used = new Set();
-  acts.forEach((a, i) => { if (a.use && sp[i]) used.add(sp[i]); });
-  return { n, N, rev: used.has('BOTTOMS'), second: used.has('BARHOP'), mult: used.has('HAPPY') ? 2 : 1 };
+  const used = new Set(), happy = new Set();
+  acts.forEach((a, i) => { if (a.use && sp[i]) { used.add(sp[i]); if (sp[i] === 'HAPPY') happy.add(i); } });
+  // HH=self: 使った人が取ったときだけ2倍 / ふだん: だれが取っても2倍
+  const mult = t => HH === 'self' ? (happy.has(t) ? 2 : 1) : (happy.size ? 2 : 1);
+  return { n, N, rev: used.has('BOTTOMS'), second: used.has('BARHOP'), mult };
 }
 
 // ---- CPU ----
@@ -186,9 +190,8 @@ function makeThinker(samples = 80, lam = 0.6) {
         const acts = s.hands.map((hh, i) => i === s.me ? o : policies.normal({ ...s, me: i }));
         const ctx = roundCtx(acts, s.sp || [], s.n, s.N);
         const r = resolve(acts.map(a => a.c), ctx);
-        const v = s.pot * ctx.mult;
-        if (r.taker === s.me) gain += v;
-        else if (r.taker >= 0) gain -= v / (s.n - 1) * 0.3; // 相手が取ると少し損
+        if (r.taker === s.me) gain += s.pot * ctx.mult(s.me);
+        else if (r.taker >= 0) gain -= s.pot * ctx.mult(r.taker) / (s.n - 1) * 0.3; // 相手が取ると少し損
         else gain += s.pot / s.n * 0.5; // 持ちこしは、あとでだれかのものに
       }
       gain /= S;
@@ -230,7 +233,7 @@ export function playGame(n, N, pol, pick = null) {
     const res = resolve(acts.map(a => a.c), ctx);
     st[res.how]++;
     // ハッピーアワーの回に持ちこしになったら、2倍にはしない(取った回だけ2倍)
-    if (res.taker >= 0) { scores[res.taker] += pot * ctx.mult; got[res.taker] += potCards; pot = 0; potCards = 0; }
+    if (res.taker >= 0) { scores[res.taker] += pot * ctx.mult(res.taker); got[res.taker] += potCards; pot = 0; potCards = 0; }
   }
   // 最後の持ちこしは、だれのものにもならない
   st.leftover = pot !== 0 ? 1 : 0; st.leftoverAbs = Math.abs(pot);
@@ -277,7 +280,7 @@ function skill(games) {
 function special(games) {
   const Ns = (process.env.NS || '10').split(',').map(Number);
   for (const N of Ns) {
-    console.log(`\n=== 特殊カードのバランス(全員ふつう、手札${N}枚、各${games}試合) ===`);
+    console.log(`\n=== 特殊カードのバランス(ハッピーアワー=${HH === 'self' ? '使った人だけ2倍' : 'だれでも2倍'}、全員ふつう、手札${N}枚、各${games}試合) ===`);
     console.log(' 人数 | カードごとの勝率(基準=1/人数)                  | 使った率(下剋上/HH/2軒目) | 特殊カードが出た回');
     for (let n = 2; n <= 8; n++) {
       const avail = specialsFor(n);
