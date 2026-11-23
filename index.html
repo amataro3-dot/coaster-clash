@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Muddy's Games">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head><body>
 <div id="app">
 
@@ -19,18 +19,48 @@
   <h1 class="logo">COASTER<br>CLASH<span class="dot">.</span></h1>
   <p class="kana">コースタークラッシュ</p>
   <div class="hero-co" id="heroCo"></div>
-  <div class="panel">
-    <h2>練習モード(コンピューターと対戦)</h2>
-    <label class="row">名前<input id="inName" maxlength="8" value="あなた"></label>
-    <div class="row">人数<div class="seg" id="segN"></div></div>
-    <div class="row">手札<div class="seg" id="segH"></div></div>
-    <p class="hint" id="hintH"></p>
-    <div class="row">相手の強さ<div class="seg" id="segL"></div></div>
-    <button class="btn big" id="btnStart">▶ スタート</button>
-    <button class="btn sub" id="btnRule">ルールを見る</button>
+  <div class="panel on-panel">
+    <h2>みんなで対戦 <span class="bdg">オンライン</span></h2>
+    <label class="row">名前<input id="inName" maxlength="8" placeholder="なまえ"></label>
+    <button class="btn big" id="btnMake">部屋を作る</button>
+    <p class="or">番号をもらった人</p>
+    <div class="join"><input id="inCode" inputmode="numeric" maxlength="4" placeholder="1234" autocomplete="off"><button class="btn" id="btnJoin">入る</button></div>
+    <p class="err" id="onErr"></p>
   </div>
+  <div class="panel pr-panel">
+    <h2>練習モード</h2>
+    <p class="pr-d">ひとりでコンピューターと対戦。時間制限なし</p>
+    <button class="btn sub" id="btnPractice">練習する</button>
+    <div id="prSet" class="hide">
+      <div class="row">人数<div class="seg" id="segN"></div></div>
+      <div class="row">手札<div class="seg" id="segH"></div></div>
+      <p class="hint" id="hintH"></p>
+      <div class="row">相手の強さ<div class="seg" id="segL"></div></div>
+      <button class="btn big" id="btnStart">▶ スタート</button>
+    </div>
+  </div>
+  <button class="btn ghost" id="btnRule">ルールを見る</button>
   <p class="foot"><a href="/">Muddy's Games トップ</a> · <a href="/privacy.html">プライバシーポリシー</a></p>
-  <p class="ver">試作 v=5</p>
+  <p class="ver">試作 v=6</p>
+</section>
+
+<!-- 待ちあい(オンライン) -->
+<section id="scr-lobby" class="scr hide">
+  <div class="topbar"><span>待ちあい</span><button class="mini" id="btnLeave">部屋から出る</button></div>
+  <p class="room-t">部屋の番号</p>
+  <div class="room-no" id="roomNo"></div>
+  <p class="room-s">この番号を友だちに伝えてね</p>
+  <div class="mem" id="mem"></div>
+  <p class="cnt-n" id="memCnt"></p>
+  <div id="hostBox">
+    <div class="addcpu"><button class="btn sub" id="btnCpu">＋ コンピューター</button><div class="seg" id="segCL"></div></div>
+    <div class="panel set">
+      <div class="row">手札<div class="seg" id="segLH"></div></div>
+      <p class="hint" id="hintLH"></p>
+      <button class="btn big" id="btnGoGame">▶ スタート</button>
+    </div>
+  </div>
+  <p class="guest" id="guestBox"></p>
 </section>
 
 <!-- 今回のカード(試合の最初) -->
@@ -40,16 +70,20 @@
   <div class="lineup" id="lineup"></div>
   <p class="sum" id="lineupSum"></p>
   <button class="btn big" id="btnLineup">特殊カードをえらぶ</button>
+  <p class="cnt hide" id="lineupWait">まもなく 特殊カードえらび…</p>
 </section>
 
 <!-- 特殊カードを選ぶ -->
 <section id="scr-sp" class="scr hide">
+  <div class="tm-top hide" id="spTm"><div class="ring" id="spRing"></div></div>
+  <div class="tbar hide" id="spBar"><i></i></div>
   <h2 class="sp-t">特殊カードを1枚えらんでね</h2>
   <p class="sp-s">好きな回に、1回だけ使えるよ</p>
   <div class="lineup-mini" id="spLineup"></div>
   <div class="sp-pick" id="spPick"></div>
   <p class="sp-note" id="spNote"></p>
   <button class="btn big" id="btnSp" disabled>カードを選んでね</button>
+  <p class="cnt hide" id="spWait"></p>
 </section>
 
 <!-- みんなの特殊カード -->
@@ -59,11 +93,13 @@
   <div class="who" id="who"></div>
   <p class="cnt" id="whoCnt"></p>
   <button class="btn big" id="btnWho">タップでスタート</button>
+  <p class="cnt hide" id="whoWait">まもなく スタート!</p>
 </section>
 
 <!-- 選ぶ画面 -->
 <section id="scr-pick" class="scr hide">
-  <div class="topbar"><span id="roundNo"></span><button class="mini" id="btnQuit">やめる</button></div>
+  <div class="topbar"><span id="roundNo"></span><div class="tm"><div class="ring hide" id="pkRing"></div><button class="mini" id="btnQuit">やめる</button></div></div>
+  <div class="tbar hide" id="pkBar"><i></i></div>
   <div class="next">
     <p class="next-t" id="nextT"></p>
     <div class="pot" id="pot"></div>
@@ -94,6 +130,7 @@
   <div class="rank" id="rank"></div>
   <p class="msg" id="lost"></p>
   <button class="btn big" id="btnAgain">もう一度</button>
+  <p class="cnt hide" id="endWait">ホストが「もう1回」を押すのを待っています…</p>
   <button class="btn sub" id="btnTop">最初の画面へ</button>
 </section>
 
@@ -118,6 +155,7 @@
     <li><b>2軒目</b>: その回は、かぶっていない中で2番目に強い数の人が取る。</li>
   </ul>
   <p class="hint">2人のときは、相手がいちばん大きい数か2番目に大きい数(10枚なら 8・9)を出したら、0 の人が取ります。下剋上の回は 1・2。2軒目はありません。</p>
+  <p class="hint">オンライン対戦では、コースターを選ぶ時間は 45秒、特殊カードを選ぶ時間は 30秒。過ぎたら、ランダムに出します(特殊カードは使いません)。</p>
   <button class="btn" id="btnRuleClose">とじる</button>
 </div></div>
 
@@ -127,6 +165,9 @@
 <!-- 特殊カードの帯 -->
 <div id="band" class="band-wrap hide"><div class="band" id="bandIn"></div></div>
 
+<!-- つながらないとき -->
+<div id="net" class="net hide"></div>
+
 <!-- 確かめ -->
 <div id="askBox" class="modal hide"><div class="modal-in ask">
   <p id="askT">ゲームをやめますか?</p>
@@ -134,5 +175,14 @@
 </div></div>
 
 </div>
-<script src="main.js?v=5"></script>
+<!-- Firebase(COASTER CLASH 専用プロジェクト coaster-clash-e0449) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
+<!-- ?v= の数字は、上げるたびに全部まとめて新しくする(tools/set-version.mjs) -->
+<script src="backguard.js?v=6"></script>
+<script src="config.js?v=6"></script>
+<script src="main.js?v=6"></script>
+<script src="online.js?v=6"></script>
 </body></html>

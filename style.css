@@ -1,10 +1,10 @@
-/* COASTER CLASH 試作 v=5 */
+/* COASTER CLASH 試作 v=6 */
 :root{--bg:#2b1a10;--card:#fffaf2;--neon:#ff4fa3;--neon2:#4ff0ff;--amber:#ffb84d;--red:#ff4040;--light:#f6e7d3;--ink:#1f2633}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%}
 body{color:var(--light);font:15px/1.5 "M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Noto Sans CJK JP",sans-serif;font-weight:700;
 background-color:var(--bg);
-background-image:radial-gradient(ellipse 140% 520px at 50% 0,rgba(255,130,60,.22),transparent 70%),linear-gradient(90deg,rgba(0,0,0,.55),transparent 20%,transparent 80%,rgba(0,0,0,.55)),linear-gradient(rgba(20,8,2,.28),rgba(20,8,2,.28)),url("wood.svg?v=5");
+background-image:radial-gradient(ellipse 140% 520px at 50% 0,rgba(255,130,60,.22),transparent 70%),linear-gradient(90deg,rgba(0,0,0,.55),transparent 20%,transparent 80%,rgba(0,0,0,.55)),linear-gradient(rgba(20,8,2,.28),rgba(20,8,2,.28)),url("wood.svg?v=6");
 background-size:auto,auto,auto,900px 600px;background-repeat:no-repeat,repeat,repeat,repeat}
 #app{max-width:480px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom))}
 .hide{display:none!important}
@@ -207,3 +207,63 @@ a{color:var(--amber)}
 .modal-in h3{margin:10px 0 2px;color:#b03a22;font-size:16px}
 .modal-in ul{padding-left:1.3em;margin:4px 0}
 @media(prefers-reduced-motion:reduce){.band,.stamp{animation:none}}
+
+/* ---- オンライン(v=6) ---- */
+/* 最初の画面 */
+.panel h2{display:flex;align-items:center;gap:6px}
+.bdg{font-size:10px;padding:1px 6px;border-radius:6px;background:var(--neon);color:#fff;text-shadow:none;box-shadow:0 0 8px var(--neon)}
+.or{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:12px;color:#e8d6be}
+.or::before,.or::after{content:"";flex:1;height:1px;background:rgba(255,184,77,.35)}
+.join{display:flex;gap:8px;margin-top:10px}
+.join input{flex:1;min-width:0;font:inherit;font-size:24px;letter-spacing:.4em;text-align:center;padding:8px;border-radius:12px;border:2px solid #c9a04a;background:#fffaf2;color:var(--ink)}
+.join .btn{width:auto;margin:0;padding:0 18px}
+.err{margin:8px 0 0;min-height:0;font-size:13px;color:#ffb0a0;text-align:center}
+.err:empty{display:none}
+.pr-panel{margin-top:12px}
+.pr-d{margin:0;font-size:12px;color:#e8d6be}
+#prSet{margin-top:6px}
+.btn.ghost{background:transparent;color:var(--amber);box-shadow:none;border:1px solid rgba(255,184,77,.5)}
+.btn.ghost:active{transform:none}
+/* 待ちあい */
+.room-t{text-align:center;margin:8px 0 0;font-size:13px;color:var(--amber)}
+.room-no{text-align:center;font-size:56px;line-height:1.05;font-weight:800;letter-spacing:.18em;margin:2px 0 0 .18em;color:#eaffff;text-shadow:0 0 3px #fff,0 0 12px var(--neon2),0 0 26px var(--neon2)}
+.room-s{text-align:center;font-size:12px;margin:2px 0 10px;color:#e8d6be}
+.mem{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.m{display:flex;align-items:center;gap:7px;background:rgba(20,10,5,.6);border:1px solid rgba(255,184,77,.25);border-radius:12px;padding:6px 8px;min-width:0;min-height:48px}
+.m .co{width:34px;height:34px}
+.m .co svg{box-shadow:0 2px 0 #0d3a1f,0 3px 5px rgba(0,0,0,.5)}
+.m .t{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m .t small{display:block;font-size:10px;color:#e8d6be}
+.m .t small.h{color:var(--amber)}
+.m .x{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,184,77,.5);background:rgba(0,0,0,.4);color:var(--light);font-size:12px;line-height:1;padding:0}
+.m.me{border-color:var(--neon2);box-shadow:0 0 6px rgba(79,240,255,.35)}
+.m.off{opacity:.5}
+.m.empty{justify-content:center;border-style:dashed;color:rgba(246,231,211,.35);font-size:12px}
+.addcpu{display:flex;gap:6px;align-items:center;margin-top:8px}
+.addcpu .btn{margin:0;flex:1;font-size:15px;padding:9px}
+.addcpu .seg button{padding:7px 8px}
+.set{margin-top:10px}
+.cnt-n{text-align:center;font-size:12px;color:#e8d6be;margin:8px 0 0}
+.guest{margin-top:12px;text-align:center;font-size:14px;color:#e8d6be;background:rgba(0,0,0,.3);border-radius:10px;padding:10px}
+.guest:empty{display:none}
+/* カウントダウン */
+.tm{display:flex;align-items:center;gap:8px}
+.tm-top{display:flex;justify-content:flex-end;margin-bottom:-38px}
+.ring{position:relative;width:46px;height:46px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .rc{transition:stroke-dashoffset .25s linear}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff8e6;text-shadow:0 0 6px var(--amber)}
+.ring.hurry b{color:#ffecec;text-shadow:0 0 6px var(--red),0 0 12px var(--red);animation:beat 1s infinite}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.tbar{height:5px;border-radius:3px;background:rgba(0,0,0,.4);margin:6px 0 0;overflow:hidden}
+.tbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--amber),#ffd877);box-shadow:0 0 8px var(--amber);transition:width .25s linear}
+.tbar.hurry i{background:linear-gradient(90deg,var(--red),#ff8a5a);box-shadow:0 0 8px var(--red)}
+.pl .st.wait{color:#b9a68e}
+.pl.off{opacity:.55}
+.pl.off .nm::after{content:"(切断)";font-size:9px;color:#ffb0a0}
+.hand.sent .co{opacity:.45;pointer-events:none}
+.hand.sent .co.sel{opacity:1}
+.sp-pick.sent .sp-opt{pointer-events:none}
+/* つながらないとき */
+.net{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:6px 10px calc(6px + env(safe-area-inset-bottom));text-align:center;font-size:13px;background:#8c1c1c;color:#fff}
+@media(prefers-reduced-motion:reduce){.ring.hurry b{animation:none}}

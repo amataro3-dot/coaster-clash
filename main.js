@@ -1,9 +1,10 @@
-// COASTER CLASH 試作 v=5(練習モード: コンピューターと対戦)
+// COASTER CLASH 試作 v=6(練習モード＋オンライン対戦の画面)
 // ルール: muddys-notes の coaster-clash_spec.md(2026-11-21 のルール)
 // v=5: かぶった数はとばす / 2人の 0 / 特殊カード(下剋上・ハッピーアワー・2軒目) / 同点は枚数
+// v=6: オンライン対戦(online.js)。画面の表示はここで、練習とオンラインの両方に使う
 'use strict';
 
-const VER = 5;
+const VER = 6;
 
 // ---------- 点数カード ----------
 const CARD = {
@@ -155,21 +156,49 @@ function cpuStrong(s, samples = 40, noise = 0.5) {
   return best;
 }
 
+
+// 結果発表の長さ(ms)。ホストはこれだけ待ってから次の回へ進む(online.js)
+const RES_STEP = 260;
+const resDuration = (n, bands) => 500 + n * RES_STEP + 500 + 1600 * bands + 3800;
+
 // ---------- 画面 ----------
 const $ = id => document.getElementById(id);
 const CPU_NAMES = ['マスター', 'ジョー', 'リサ', 'ケン', 'ミキ', 'トム', 'サラ'];
 const recHand = n => n <= 4 ? 10 : n <= 6 ? 9 : 8;
 const cfg = { n: 4, N: 10, level: 'normal', Nchanged: false };
-let G = null; // ゲームの状態
+// テスト用: URL に ?fast をつけると、時間を 1/10 にする
+const TIME_SCALE = /[?&]fast\b/.test(location.search) ? 0.1 : 1;
+let G = null; // ゲームの状態(オンラインでは online.js が Firebase の中身から作る。G.online = true)
 const timers = [];
-const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+const later = (fn, ms) => timers.push(setTimeout(fn, ms * TIME_SCALE));
 const clearTimers = () => { while (timers.length) clearTimeout(timers.pop()); };
-const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const meP = () => G.players.find(p => p.me) || G.players[0];
+// サーバーの時刻(オンラインでは online.js が SERVER_OFFSET を入れる)
+const nowMs = () => Date.now() + (window.SERVER_OFFSET || 0);
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* なくてもよい */ } };
 
+let curScr = 'scr-title';
 function show(id) {
-  for (const s of document.querySelectorAll('.scr')) s.classList.add('hide');
-  $(id).classList.remove('hide');
-  window.scrollTo(0, 0);
+  if (curScr !== id) {
+    for (const s of document.querySelectorAll('.scr')) s.classList.add('hide');
+    $(id).classList.remove('hide');
+    window.scrollTo(0, 0);
+    curScr = id;
+  }
+  // 戻るボタンの確認(backguard.js)
+  if (window.BackGuard) {
+    if (id === 'scr-title') BackGuard.set('home');
+    else if (id === 'scr-lobby') BackGuard.set('room', () => Online.leave());
+    else if (G && G.online) BackGuard.set('game', () => Online.leave());
+    else BackGuard.set('game', backToTitle);
+  }
+}
+function backToTitle() {
+  clearTimers(); stopCountdown(); G = null;
+  $('intro').classList.add('hide'); $('band').classList.add('hide');
+  show('scr-title');
 }
 
 function seg(el, items, get, set) {
@@ -182,13 +211,49 @@ function drawTitle() {
   seg($('segL'), [['normal', 'ふつう'], ['strong', 'つよい']], () => cfg.level, v => { cfg.level = v; drawTitle(); });
   $('hintH').textContent = `0〜${cfg.N - 1} のコースター・${cfg.N}回勝負`;
 }
+function myName() {
+  const v = ($('inName').value || '').trim().slice(0, 8);
+  if (v) lsSet('cc-name', v);
+  return v;
+}
 
+// ---------- カウントダウン(オンライン) ----------
+let cdTimer = null;
+const RING_R = 20, RING_C = 2 * Math.PI * RING_R;
+function countdown(ringId, barId, deadline, total) {
+  stopCountdown();
+  const ring = $(ringId), bar = $(barId);
+  ring.classList.remove('hide'); bar.classList.remove('hide');
+  if (ring.parentElement.classList.contains('tm-top')) ring.parentElement.classList.remove('hide');
+  ring.innerHTML = `<svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="${RING_R}" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle class="rc" cx="23" cy="23" r="${RING_R}" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="${RING_C}"/></svg><b></b>`;
+  const rc = ring.querySelector('.rc'), num = ring.querySelector('b'), fill = bar.querySelector('i');
+  const tick = () => {
+    const ms = Math.max(0, Math.min(total, deadline - nowMs()));
+    const left = Math.ceil(ms / 1000 / TIME_SCALE);
+    const hurry = left <= 10;
+    num.textContent = left;
+    rc.setAttribute('stroke', hurry ? '#ff4040' : '#ffb84d');
+    rc.style.filter = `drop-shadow(0 0 4px ${hurry ? '#ff4040' : '#ffb84d'})`;
+    rc.setAttribute('stroke-dashoffset', RING_C * (1 - ms / total));
+    fill.style.width = (ms / total * 100) + '%';
+    ring.classList.toggle('hurry', hurry);
+    bar.classList.toggle('hurry', hurry);
+  };
+  tick();
+  cdTimer = setInterval(tick, 250);
+}
+function stopCountdown() {
+  clearInterval(cdTimer); cdTimer = null;
+  for (const id of ['pkRing', 'pkBar', 'spRing', 'spBar', 'spTm']) $(id).classList.add('hide');
+}
+
+// ---------- 練習モード ----------
 function startGame() {
   clearTimers();
-  const name = ($('inName').value || 'あなた').trim().slice(0, 8) || 'あなた';
+  const name = myName() || 'あなた';
   const names = shuffle(CPU_NAMES.slice()).slice(0, cfg.n - 1);
   G = {
-    n: cfg.n, N: cfg.N, level: cfg.level,
+    online: false, n: cfg.n, N: cfg.N, level: cfg.level,
     players: [{ name, me: true }, ...names.map(nm => ({ name: nm, me: false }))].map(p => ({ ...p, hand: [...Array(cfg.N).keys()], score: 0, got: [], sp: null, spUsed: false })),
     order: makePoints(cfg.N), r: 0, pot: [], pick: null, useSp: false, cpuAct: [], mySp: null,
   };
@@ -201,47 +266,83 @@ function showLineup() {
   $('lineup').innerHTML = all.map((v, i) => pcHtml(v, '', `animation-delay:${i * 60}ms`)).join('');
   const plus = all.filter(v => v > 0).reduce((a, v) => a + v, 0), minus = all.filter(v => v < 0).reduce((a, v) => a + v, 0);
   $('lineupSum').textContent = `プラス 合計 +${plus}点 / マイナス 合計 ${minus}点 / ${G.N}回勝負`;
+  $('btnLineup').classList.toggle('hide', G.online);
+  $('lineupWait').classList.toggle('hide', !G.online);
   show('scr-lineup');
 }
 
 // 特殊カードを選ぶ(点数カードを見たあと)
 function showSpPick() {
-  G.mySp = null;
+  if (!G.online) G.mySp = null;
   $('spLineup').innerHTML = G.order.slice().sort((a, b) => b - a).map(v => pcHtml(v)).join('');
   drawSpPick();
   show('scr-sp');
 }
 function drawSpPick() {
   const keys = specialsFor(G.n);
+  const sent = !!G.spSent;
   $('spPick').style.gridTemplateColumns = `repeat(${keys.length},1fr)`;
+  $('spPick').classList.toggle('sent', sent);
   $('spPick').innerHTML = keys.map(k => `<div class="sp-opt ${G.mySp === k ? 'on' : G.mySp ? 'off' : ''}" data-k="${k}">${spHtml(k)}<div class="jn">${SP[k].ja}</div><div class="en">${SP[k].en}</div><div class="ds">${SP[k].desc}</div></div>`).join('');
-  for (const el of $('spPick').querySelectorAll('.sp-opt')) el.onclick = () => { G.mySp = el.dataset.k; drawSpPick(); };
+  for (const el of $('spPick').querySelectorAll('.sp-opt')) el.onclick = () => { if (G.spSent) return; G.mySp = el.dataset.k; drawSpPick(); };
   const b = $('btnSp');
-  b.disabled = !G.mySp;
-  b.textContent = G.mySp ? `${SP[G.mySp].ja} にする` : 'カードを選んでね';
+  b.disabled = !G.mySp || sent;
+  b.textContent = sent ? (G.mySp ? `${SP[G.mySp].ja} にした!` : 'えらんだ!') : G.mySp ? `${SP[G.mySp].ja} にする` : 'カードを選んでね';
   $('spNote').textContent = G.n === 2 ? '選んだカードは、みんなに見えるよ(2人のときは 2軒目なし)' : '選んだカードは、みんなに見えるよ';
+  drawSpWait();
 }
-// みんなの特殊カード(コンピューターはランダムに選ぶ)
+function drawSpWait() {
+  const w = $('spWait');
+  w.classList.toggle('hide', !G.online);
+  if (!G.online) return;
+  const done = G.status || [];
+  const k = done.filter(Boolean).length;
+  w.textContent = G.spSent ? `みんなを待っています…(${k} / ${G.n}人 えらんだ)` : `${k} / ${G.n}人 えらんだ`;
+}
+// みんなの特殊カード(練習: コンピューターはランダムに選ぶ)
 function showWho() {
   const keys = specialsFor(G.n);
   G.players.forEach(p => { p.sp = p.me ? G.mySp : keys[ri(keys.length)]; p.spUsed = false; });
+  renderWho();
+}
+function renderWho() {
+  const keys = specialsFor(G.n);
   $('who').innerHTML = G.players.map(p => `<div class="w${p.me ? ' me' : ''}">${spHtml(p.sp)}<div class="t">${esc(p.name)}<small>${SP[p.sp].ja}</small></div></div>`).join('');
   $('whoCnt').textContent = keys.map(k => `${SP[k].ja} ×${G.players.filter(p => p.sp === k).length}`).join(' ・ ');
+  $('btnWho').classList.toggle('hide', G.online);
+  $('whoWait').classList.toggle('hide', !G.online);
   show('scr-who');
 }
 
 function potValue() { return G.pot.reduce((a, v) => a + v, 0); }
 const spNow = () => G.players.map(p => p.spUsed ? null : p.sp);
 
+// スコア。status[i]: true = えらんだ / false = まだ
 function drawBoard(el, status) {
   const top = Math.max(...G.players.map(p => p.score));
-  el.innerHTML = G.players.map((p, i) => `<div class="pl${p.me ? ' me' : ''}${p.score === top && top !== 0 ? ' lead' : ''}">
-<div class="nm">${esc(p.name)}</div><div class="sc">${p.score}</div>${p.sp ? spHtml(p.sp, 'ic' + (p.spUsed ? ' used' : '')) : ''}<div class="st ${status && status[i] ? 'ok' : ''}">${status ? (status[i] ? '✓ 決めた' : '考え中…') : ''}</div></div>`).join('');
+  el.innerHTML = G.players.map((p, i) => {
+    const st = status ? (status[i] ? '<div class="st ok">えらんだ ✓</div>' : `<div class="st wait">${p.me ? 'えらび中' : '考え中…'}</div>`) : '<div class="st"></div>';
+    return `<div class="pl${p.me ? ' me' : ''}${p.off ? ' off' : ''}${p.score === top && top !== 0 ? ' lead' : ''}">
+<div class="nm">${esc(p.name)}</div><div class="sc">${p.score}</div>${p.sp ? spHtml(p.sp, 'ic' + (p.spUsed ? ' used' : '')) : ''}${st}</div>`;
+  }).join('');
 }
 
+// 練習: 次の回をはじめる
 function beginRound() {
   G.pot.push(G.order[G.r]);
   G.pick = null; G.useSp = false;
+  // コンピューターは、この時点の情報で決める(あなたの選びは見ない)
+  const st = { hands: G.players.map(p => p.hand), pot: potValue(), future: G.order.slice(G.r + 1), n: G.n, N: G.N, sp: spNow() };
+  G.cpuAct = G.players.map((p, i) => p.me ? null : (G.level === 'strong' ? cpuStrong({ ...st, me: i }) : cpuNormal({ ...st, me: i })));
+  // 決めた印は、少しずつつける(雰囲気)
+  G.status = G.players.map(() => false);
+  G.players.forEach((p, i) => { if (!p.me) later(() => { G.status[i] = true; drawBoard($('board'), G.status); }, 500 + Math.random() * 1800); });
+  renderPick();
+  showIntro();
+}
+
+// 選ぶ画面(練習・オンライン共通)。G.pot・G.r・G.status を使う
+function renderPick() {
   const v = G.order[G.r];
   $('roundNo').textContent = `${G.r + 1} / ${G.N} 回目`;
   $('nextT').innerHTML = `次は <b class="${v < 0 ? 'm' : ''}">${fmt(v)} ${CARD[v]}</b> だ!`;
@@ -253,20 +354,14 @@ function beginRound() {
   // 2人のときの 0
   $('rule2').classList.toggle('hide', G.n !== 2);
   if (G.n === 2) $('rule2').innerHTML = `2人のときは <b>${G.N - 2}・${G.N - 1}</b> に 0 が勝つ<small>(下剋上の回は 1・2)</small>`;
-  // コンピューターは、この時点の情報で決める(あなたの選びは見ない)
-  const st = { hands: G.players.map(p => p.hand), pot: potValue(), future: G.order.slice(G.r + 1), n: G.n, N: G.N, sp: spNow() };
-  G.cpuAct = G.players.map((p, i) => p.me ? null : (G.level === 'strong' ? cpuStrong({ ...st, me: i }) : cpuNormal({ ...st, me: i })));
-  // 決めた印は、少しずつつける(雰囲気)
-  G.decided = G.players.map(() => false);
-  drawBoard($('board'), G.decided);
-  G.players.forEach((p, i) => { if (!p.me) later(() => { G.decided[i] = true; drawBoard($('board'), G.decided); }, 500 + Math.random() * 1800); });
+  drawBoard($('board'), G.status);
   drawHand();
   show('scr-pick');
-  showIntro(v);
 }
 
 // 毎回の最初: 点数カードを大きく出して、少しして消す
-function showIntro(v) {
+function showIntro() {
+  const v = G.order[G.r];
   const el = $('intro');
   $('introRn').textContent = `${G.r + 1} / ${G.N} 回目`;
   $('introBig').className = 'big' + (G.pot.length > 1 ? ' many' : '');
@@ -280,21 +375,27 @@ function showIntro(v) {
 }
 
 function drawHand() {
-  const me = G.players[0];
+  const me = meP();
+  const sent = !!G.sent;
+  $('hand').classList.toggle('sent', sent);
   $('hand').innerHTML = me.hand.map(c => coaster(c)).join('');
   for (const el of $('hand').querySelectorAll('.co')) {
     if (+el.dataset.n === G.pick) el.classList.add('sel');
-    el.onclick = () => { G.pick = +el.dataset.n; drawHand(); };
+    el.onclick = () => { if (G.sent) return; G.pick = +el.dataset.n; drawHand(); };
   }
   // 自分の特殊カード(タップで使う / やめる)
   const ms = $('mysp');
-  ms.className = 'mysp' + (me.spUsed ? ' used' : G.useSp ? ' on' : '');
-  ms.innerHTML = `${spHtml(me.sp)}<div class="lb">${me.spUsed ? '使った' : G.useSp ? '使う!' : 'タップで使う'}</div>`;
-  ms.onclick = me.spUsed ? null : () => { G.useSp = !G.useSp; drawHand(); };
+  if (!me.sp) { ms.innerHTML = ''; ms.onclick = null; }
+  else {
+    ms.className = 'mysp' + (me.spUsed ? ' used' : G.useSp ? ' on' : '');
+    ms.innerHTML = `${spHtml(me.sp)}<div class="lb">${me.spUsed ? '使った' : G.useSp ? '使う!' : 'タップで使う'}</div>`;
+    ms.onclick = me.spUsed || sent ? null : () => { G.useSp = !G.useSp; drawHand(); };
+  }
   const b = $('btnGo');
-  b.disabled = G.pick === null;
-  b.classList.toggle('spgo', G.useSp && G.pick !== null);
-  b.textContent = G.pick === null ? 'コースターを選んでね' : G.useSp ? `${G.pick} ＋ ${SP[me.sp].ja} で勝負!` : `${G.pick} で勝負!`;
+  b.disabled = G.pick === null || sent;
+  b.classList.toggle('spgo', G.useSp && G.pick !== null && !sent);
+  if (sent) b.textContent = 'みんなを待っています…';
+  else b.textContent = G.pick === null ? 'コースターを選んでね' : G.useSp ? `${G.pick} ＋ ${SP[me.sp].ja} で勝負!` : `${G.pick} で勝負!`;
 }
 
 // 特殊カードの帯
@@ -304,16 +405,24 @@ const BAND = {
   BARHOP: () => 'この回は 2番目に強い数の人が取る!',
 };
 
+// 練習: 「勝負!」
 function go() {
   if (G.pick === null) return;
-  clearTimers();
-  $('intro').classList.add('hide');
   const acts = G.players.map((p, i) => p.me ? { c: G.pick, use: G.useSp } : G.cpuAct[i]);
+  playRound(acts);
+}
+
+// 全員の出したもの(acts: [{ c, use }])で、結果発表をする(練習・オンライン共通)
+// G の手札・特殊カード・点数を、この回のぶん進める(オンラインのホストも同じ計算をする: online.js の applyRound)
+function playRound(acts) {
+  clearTimers();
+  stopCountdown();
+  $('intro').classList.add('hide');
   const sp = spNow();
   const ctx = roundCtx(acts, sp, G.N);
   const plays = acts.map(a => a.c);
   const usedBy = acts.map((a, i) => !!(a.use && sp[i]));
-  plays.forEach((c, i) => { const h = G.players[i].hand; h.splice(h.indexOf(c), 1); });
+  plays.forEach((c, i) => { const h = G.players[i].hand; const k = h.indexOf(c); if (k >= 0) h.splice(k, 1); });
   usedBy.forEach((u, i) => { if (u) G.players[i].spUsed = true; });
   const res = resolve(plays, ctx);
   const val = potValue();
@@ -326,9 +435,8 @@ function go() {
   drawBoard($('board2'));
   $('seno').textContent = 'せーの!';
   show('scr-res');
-  const step = 260;
-  G.players.forEach((p, i) => later(() => $('rv' + i).classList.add('op'), 500 + i * step));
-  let t = 500 + G.n * step + 500;
+  G.players.forEach((p, i) => later(() => $('rv' + i).classList.add('op'), 500 + i * RES_STEP));
+  let t = 500 + G.n * RES_STEP + 500;
   // 特殊カードの帯(使われたカードごとに1回)
   for (const k of SP_KEYS) {
     if (!ctx.used.has(k)) continue;
@@ -379,6 +487,7 @@ function finishRound(plays, res, ctx, val) {
   $('msg').innerHTML = m;
   drawBoard($('board2'));
   G.r++;
+  if (G.online) return; // オンラインは、ホストが次へ進める
   const last = G.r >= G.N;
   $('btnNext').textContent = last ? '最終結果へ' : '次へ';
   $('btnNext').classList.remove('hide');
@@ -407,7 +516,15 @@ function endGame() {
   }).join('');
   const lost = potValue();
   $('lost').innerHTML = G.pot.length ? `最後の持ちこし(${pts(lost)})は、だれのものにもならなかった` : '';
+  drawEndButtons();
   show('scr-end');
+}
+function drawEndButtons() {
+  const host = G.online && G.isHost;
+  $('btnAgain').classList.toggle('hide', G.online && !host);
+  $('btnAgain').textContent = G.online ? 'もう1回(待ちあいへ)' : 'もう一度';
+  $('endWait').classList.toggle('hide', !G.online || host);
+  $('btnTop').textContent = G.online ? '部屋から出る' : '最初の画面へ';
 }
 
 function ask(text, yes) {
@@ -417,21 +534,25 @@ function ask(text, yes) {
   $('askNo').onclick = () => $('askBox').classList.add('hide');
 }
 function quit() {
-  ask('ゲームをやめますか?', () => { clearTimers(); G = null; $('intro').classList.add('hide'); $('band').classList.add('hide'); show('scr-title'); });
+  if (G && G.online) ask('ゲームをやめますか?', () => Online.leave());
+  else ask('ゲームをやめますか?', backToTitle);
 }
 
 // ---------- はじめる ----------
 $('heroCo').innerHTML = [7, 0, 12].map(coaster).join('');
+$('inName').value = lsGet('cc-name') || '';
 cfg.N = recHand(cfg.n);
 drawTitle();
+show('scr-title');
+$('btnPractice').onclick = () => { $('prSet').classList.toggle('hide'); $('btnPractice').classList.toggle('hide'); };
 $('btnStart').onclick = startGame;
-$('btnGo').onclick = go;
+$('btnGo').onclick = () => { if (!G) return; if (G.online) Online.sendPick(); else go(); };
 $('btnLineup').onclick = showSpPick;
-$('btnSp').onclick = () => { if (G.mySp) showWho(); };
+$('btnSp').onclick = () => { if (!G || !G.mySp) return; if (G.online) Online.sendSp(); else showWho(); };
 $('btnWho').onclick = () => beginRound();
 $('btnNext').onclick = nextStep;
-$('btnAgain').onclick = startGame;
-$('btnTop').onclick = () => show('scr-title');
+$('btnAgain').onclick = () => { if (G && G.online) Online.again(); else startGame(); };
+$('btnTop').onclick = () => { if (G && G.online) Online.leave(); else show('scr-title'); };
 $('btnQuit').onclick = quit;
 $('btnRule').onclick = () => $('ruleBox').classList.remove('hide');
 $('btnRuleClose').onclick = () => $('ruleBox').classList.add('hide');
