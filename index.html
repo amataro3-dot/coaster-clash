@@ -10,7 +10,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Muddy's Games">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head><body>
 <div id="app">
 
@@ -41,7 +41,7 @@
   </div>
   <button class="btn ghost" id="btnRule">ルールを見る</button>
   <p class="foot"><a href="/">Muddy's Games トップ</a> · <a href="/privacy.html">プライバシーポリシー</a></p>
-  <p class="ver">試作 v=6</p>
+  <p class="ver">試作 v=7</p>
 </section>
 
 <!-- 待ちあい(オンライン) -->
@@ -101,16 +101,15 @@
   <div class="topbar"><span id="roundNo"></span><div class="tm"><div class="ring hide" id="pkRing"></div><button class="mini" id="btnQuit">やめる</button></div></div>
   <div class="tbar hide" id="pkBar"><i></i></div>
   <div class="next">
-    <p class="next-t" id="nextT"></p>
     <div class="pot" id="pot"></div>
-    <p class="carry" id="carryT"></p>
+    <div class="next-r"><p class="next-t" id="nextT"></p><p class="carry" id="carryT"></p></div>
   </div>
   <div class="remain-wrap"><p class="lbl">のこりの点数カード</p><div class="remain" id="remain"></div></div>
   <div class="board" id="board"></div>
   <p class="rule2 hide" id="rule2"></p>
   <p class="lbl">あなたのコースター</p>
-  <div class="hand-row"><div class="mysp" id="mysp"></div><div class="hand" id="hand"></div></div>
-  <button class="btn big" id="btnGo" disabled>コースターを選んでね</button>
+  <div class="hand" id="hand"></div>
+  <div class="go-row"><div class="mysp" id="mysp"></div><button class="btn big" id="btnGo" disabled>コースターを選んでね</button></div>
 </section>
 
 <!-- 結果発表 -->
@@ -181,8 +180,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <!-- ?v= の数字は、上げるたびに全部まとめて新しくする(tools/set-version.mjs) -->
-<script src="backguard.js?v=6"></script>
-<script src="config.js?v=6"></script>
-<script src="main.js?v=6"></script>
-<script src="online.js?v=6"></script>
+<script src="backguard.js?v=7"></script>
+<script src="config.js?v=7"></script>
+<script src="main.js?v=7"></script>
+<script src="online.js?v=7"></script>
 </body></html>

@@ -308,7 +308,7 @@ const Online = (() => {
           renderPick(); showIntro();
           countdown('pkRing', 'pkBar', g.deadline, PICK_MS);
         } else {
-          if (G.status[meI] && !G.sent) { G.sent = true; drawHand(); }
+          if (G.status[meI] && !G.sent) { G.sent = true; markHand(); }
           drawBoard($('board'), G.status);
         }
         break;
@@ -335,7 +335,7 @@ const Online = (() => {
     if (!G || G.pick === null || G.sent || !code) return;
     const me = meP();
     const use = !!(G.useSp && me.sp && !me.spUsed);
-    G.sent = true; drawHand();
+    G.sent = true; markHand();
     lsSet('cc-sent', JSON.stringify({ k: `${uid}:${code}:${G.gk}:r${G.r}`, c: G.pick, use }));
     db.ref(`${ACTS}/${code}/${G.gk}/r${G.r}/${uid}`).set({ c: G.pick, use }).catch(quiet('コースター'));
   }

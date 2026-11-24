@@ -1,14 +1,15 @@
-/* COASTER CLASH 試作 v=6 */
+/* COASTER CLASH 試作 v=7 */
 :root{--bg:#2b1a10;--card:#fffaf2;--neon:#ff4fa3;--neon2:#4ff0ff;--amber:#ffb84d;--red:#ff4040;--light:#f6e7d3;--ink:#1f2633}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;min-height:100%}
+html,body{margin:0;min-height:100%;overscroll-behavior:none}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{color:var(--light);font:15px/1.5 "M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Noto Sans CJK JP",sans-serif;font-weight:700;
 background-color:var(--bg);
-background-image:radial-gradient(ellipse 140% 520px at 50% 0,rgba(255,130,60,.22),transparent 70%),linear-gradient(90deg,rgba(0,0,0,.55),transparent 20%,transparent 80%,rgba(0,0,0,.55)),linear-gradient(rgba(20,8,2,.28),rgba(20,8,2,.28)),url("wood.svg?v=6");
+background-image:radial-gradient(ellipse 140% 520px at 50% 0,rgba(255,130,60,.22),transparent 70%),linear-gradient(90deg,rgba(0,0,0,.55),transparent 20%,transparent 80%,rgba(0,0,0,.55)),linear-gradient(rgba(20,8,2,.28),rgba(20,8,2,.28)),url("wood.webp?v=7");
 background-size:auto,auto,auto,900px 600px;background-repeat:no-repeat,repeat,repeat,repeat}
 #app{max-width:480px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom))}
 .hide{display:none!important}
-button{font:inherit;cursor:pointer}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
 a{color:var(--amber)}
 
 /* タイトル */
@@ -23,7 +24,7 @@ a{color:var(--amber)}
 .panel{background:rgba(20,10,5,.6);border:1px solid rgba(255,184,77,.35);border-radius:18px;padding:14px}
 .panel h2{margin:0 0 10px;font-size:16px;color:#eaffff;text-shadow:0 0 8px var(--neon2)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0;white-space:nowrap}
-.row input{flex:1;max-width:200px;font:inherit;padding:8px 10px;border-radius:10px;border:2px solid #c9a04a;background:#fffaf2;color:var(--ink)}
+.row input{flex:1;max-width:200px;font:inherit;font-size:16px;padding:8px 10px;border-radius:10px;border:2px solid #c9a04a;background:#fffaf2;color:var(--ink)}
 .seg{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;white-space:normal}
 .seg button{min-width:34px;padding:6px 8px;border-radius:9px;border:2px solid rgba(255,184,77,.5);background:rgba(0,0,0,.35);color:var(--light);font-size:14px}
 .seg button.on{background:#d24d31;border-color:#ffb84d;color:#fff;box-shadow:0 0 8px rgba(255,120,60,.6)}
@@ -129,7 +130,7 @@ a{color:var(--amber)}
 .sum{text-align:center;margin:12px 0 0;font-size:14px;color:var(--amber)}
 @keyframes pop{to{opacity:1;transform:none}}
 /* 毎回の最初(大きく出す) */
-.intro{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,rgba(40,20,8,.88),rgba(0,0,0,.95));-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);transition:opacity .35s}
+.intro{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 45%,rgba(40,20,8,.88),rgba(0,0,0,.95));transition:opacity .35s}
 .intro.out{opacity:0;pointer-events:none}
 .intro .rn{font-size:15px;color:var(--amber);margin-bottom:6px}
 .intro .big{display:flex;justify-content:center;align-items:center;perspective:900px}
@@ -229,16 +230,16 @@ a{color:var(--amber)}
 .room-no{text-align:center;font-size:56px;line-height:1.05;font-weight:800;letter-spacing:.18em;margin:2px 0 0 .18em;color:#eaffff;text-shadow:0 0 3px #fff,0 0 12px var(--neon2),0 0 26px var(--neon2)}
 .room-s{text-align:center;font-size:12px;margin:2px 0 10px;color:#e8d6be}
 .mem{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.m{display:flex;align-items:center;gap:7px;background:rgba(20,10,5,.6);border:1px solid rgba(255,184,77,.25);border-radius:12px;padding:6px 8px;min-width:0;min-height:48px}
-.m .co{width:34px;height:34px}
-.m .co svg{box-shadow:0 2px 0 #0d3a1f,0 3px 5px rgba(0,0,0,.5)}
-.m .t{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.m .t small{display:block;font-size:10px;color:#e8d6be}
-.m .t small.h{color:var(--amber)}
-.m .x{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,184,77,.5);background:rgba(0,0,0,.4);color:var(--light);font-size:12px;line-height:1;padding:0}
-.m.me{border-color:var(--neon2);box-shadow:0 0 6px rgba(79,240,255,.35)}
-.m.off{opacity:.5}
-.m.empty{justify-content:center;border-style:dashed;color:rgba(246,231,211,.35);font-size:12px}
+.mem .m{display:flex;align-items:center;gap:7px;background:rgba(20,10,5,.6);border:1px solid rgba(255,184,77,.25);border-radius:12px;padding:6px 8px;min-width:0;min-height:48px}
+.mem .m .co{width:34px;height:34px}
+.mem .m .co svg{box-shadow:0 2px 0 #0d3a1f,0 3px 5px rgba(0,0,0,.5)}
+.mem .m .t{flex:1;min-width:0;font-size:14px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mem .m .t small{display:block;font-size:10px;color:#e8d6be}
+.mem .m .t small.h{color:var(--amber)}
+.mem .m .x{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid rgba(255,184,77,.5);background:rgba(0,0,0,.4);color:var(--light);font-size:12px;line-height:1;padding:0}
+.mem .m.me{border-color:var(--neon2);box-shadow:0 0 6px rgba(79,240,255,.35)}
+.mem .m.off{opacity:.5}
+.mem .m.empty{justify-content:center;border-style:dashed;color:rgba(246,231,211,.35);font-size:12px}
 .addcpu{display:flex;gap:6px;align-items:center;margin-top:8px}
 .addcpu .btn{margin:0;flex:1;font-size:15px;padding:9px}
 .addcpu .seg button{padding:7px 8px}
@@ -267,3 +268,38 @@ a{color:var(--amber)}
 /* つながらないとき */
 .net{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:6px 10px calc(6px + env(safe-area-inset-bottom));text-align:center;font-size:13px;background:#8c1c1c;color:#fff}
 @media(prefers-reduced-motion:reduce){.ring.hurry b{animation:none}}
+
+/* ---- 1画面に入れる(v=7) ---- */
+.co,.sp-opt,.mysp{touch-action:manipulation}
+/* 選ぶ画面: 点数カードと「次は〜」を横に並べる */
+#scr-pick .next{display:flex;align-items:center;gap:10px;margin-top:6px;text-align:left}
+#scr-pick .pot{flex:none;min-height:0;justify-content:flex-start;padding:0 0 0 4px}
+#scr-pick .pot .pc{width:78px;margin:0}
+#scr-pick .pot .pc+.pc{margin-left:calc(var(--ov,40px) - 78px)}
+#scr-pick .next-r{flex:1;min-width:0}
+#scr-pick .next-t{margin:0;font-size:19px;line-height:1.35;word-break:keep-all;overflow-wrap:anywhere}
+#scr-pick .carry{margin:4px 0 0;min-height:0;font-size:13px;line-height:1.3}
+#scr-pick .remain-wrap{margin-top:8px;padding:0 8px 6px}
+#scr-pick .lbl{margin:6px 0 3px}
+/* スコア: 名前の下に、特殊カード・点数・えらんだ印を1行で */
+.board .pl{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"nm nm nm" "ic sc st";align-items:center;column-gap:2px;padding:3px 5px 4px;text-align:left}
+.board .pl .nm{grid-area:nm;text-align:center}
+.board .pl .ic{grid-area:ic;width:17px;margin:0}
+.board .pl .sc{grid-area:sc;text-align:center;font-size:18px;line-height:1.15}
+.board .pl .st{grid-area:st;height:auto;font-size:13px;line-height:1;min-width:12px;text-align:right}
+/* 手札: 2段に入るように並べる(列の数は JS で --cols) */
+#scr-pick .hand{display:grid;grid-template-columns:repeat(var(--cols,7),minmax(0,54px));justify-content:center;gap:7px 6px;padding:8px 0 2px}
+#scr-pick .hand .co{width:100%;height:auto;aspect-ratio:1}
+/* 特殊カードは「勝負!」ボタンのとなり */
+.go-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.go-row .btn{margin:0;flex:1;min-width:0;font-size:17px;line-height:1.25;min-height:54px;padding:8px 10px}
+.go-row .mysp{width:62px;padding:0}
+.go-row .mysp:empty{display:none}
+.go-row .mysp .sp{width:40px}
+.go-row .mysp .lb{margin-top:1px}
+.go-row .mysp.on .sp{transform:translateY(-6px) rotate(-4deg) scale(1.08)}
+/* 今回のカード: 11枚以上は5列 */
+.lineup.five{grid-template-columns:repeat(5,1fr)}
+/* 結果発表も少しつめる */
+#scr-res .seno{margin:2px 0 0;font-size:26px}
+#scr-res .msg{margin:8px 0 2px}

@@ -1,10 +1,11 @@
-// COASTER CLASH 試作 v=6(練習モード＋オンライン対戦の画面)
+// COASTER CLASH 試作 v=7(練習モード＋オンライン対戦の画面)
 // ルール: muddys-notes の coaster-clash_spec.md(2026-11-21 のルール)
 // v=5: かぶった数はとばす / 2人の 0 / 特殊カード(下剋上・ハッピーアワー・2軒目) / 同点は枚数
 // v=6: オンライン対戦(online.js)。画面の表示はここで、練習とオンラインの両方に使う
+// v=7: 選ぶ画面を1画面に入るようにつめた・木目を画像(wood.webp)に・タップを軽く(markHand)
 'use strict';
 
-const VER = 6;
+const VER = 7;
 
 // ---------- 点数カード ----------
 const CARD = {
@@ -227,13 +228,17 @@ function countdown(ringId, barId, deadline, total) {
   if (ring.parentElement.classList.contains('tm-top')) ring.parentElement.classList.remove('hide');
   ring.innerHTML = `<svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="${RING_R}" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.12)" stroke-width="4"/><circle class="rc" cx="23" cy="23" r="${RING_R}" fill="none" stroke-width="4" stroke-linecap="round" stroke-dasharray="${RING_C}"/></svg><b></b>`;
   const rc = ring.querySelector('.rc'), num = ring.querySelector('b'), fill = bar.querySelector('i');
+  let lastHurry = null;
   const tick = () => {
     const ms = Math.max(0, Math.min(total, deadline - nowMs()));
     const left = Math.ceil(ms / 1000 / TIME_SCALE);
     const hurry = left <= 10;
     num.textContent = left;
-    rc.setAttribute('stroke', hurry ? '#ff4040' : '#ffb84d');
-    rc.style.filter = `drop-shadow(0 0 4px ${hurry ? '#ff4040' : '#ffb84d'})`;
+    if (hurry !== lastHurry) { // 色と光は、変わるときだけ(毎回つけ直すと重い)
+      lastHurry = hurry;
+      rc.setAttribute('stroke', hurry ? '#ff4040' : '#ffb84d');
+      rc.style.filter = `drop-shadow(0 0 4px ${hurry ? '#ff4040' : '#ffb84d'})`;
+    }
     rc.setAttribute('stroke-dashoffset', RING_C * (1 - ms / total));
     fill.style.width = (ms / total * 100) + '%';
     ring.classList.toggle('hurry', hurry);
@@ -263,6 +268,7 @@ function startGame() {
 // 試合の最初: その試合の点数カードを全部、大きく並べる
 function showLineup() {
   const all = G.order.slice().sort((a, b) => b - a);
+  $('lineup').classList.toggle('five', G.N >= 11);
   $('lineup').innerHTML = all.map((v, i) => pcHtml(v, '', `animation-delay:${i * 60}ms`)).join('');
   const plus = all.filter(v => v > 0).reduce((a, v) => a + v, 0), minus = all.filter(v => v < 0).reduce((a, v) => a + v, 0);
   $('lineupSum').textContent = `プラス 合計 +${plus}点 / マイナス 合計 ${minus}点 / ${G.N}回勝負`;
@@ -321,7 +327,7 @@ const spNow = () => G.players.map(p => p.spUsed ? null : p.sp);
 function drawBoard(el, status) {
   const top = Math.max(...G.players.map(p => p.score));
   el.innerHTML = G.players.map((p, i) => {
-    const st = status ? (status[i] ? '<div class="st ok">えらんだ ✓</div>' : `<div class="st wait">${p.me ? 'えらび中' : '考え中…'}</div>`) : '<div class="st"></div>';
+    const st = status ? (status[i] ? '<div class="st ok" title="えらんだ">✓</div>' : `<div class="st wait" title="${p.me ? 'えらび中' : '考え中'}">…</div>`) : '<div class="st"></div>';
     return `<div class="pl${p.me ? ' me' : ''}${p.off ? ' off' : ''}${p.score === top && top !== 0 ? ' lead' : ''}">
 <div class="nm">${esc(p.name)}</div><div class="sc">${p.score}</div>${p.sp ? spHtml(p.sp, 'ic' + (p.spUsed ? ' used' : '')) : ''}${st}</div>`;
   }).join('');
@@ -347,6 +353,8 @@ function renderPick() {
   $('roundNo').textContent = `${G.r + 1} / ${G.N} 回目`;
   $('nextT').innerHTML = `次は <b class="${v < 0 ? 'm' : ''}">${fmt(v)} ${CARD[v]}</b> だ!`;
   $('pot').innerHTML = G.pot.map(x => pcHtml(x)).join('');
+  // 持ちこしが多いときは、重ねを深くして横に広がりすぎないようにする(全体で 170px まで)
+  $('pot').style.setProperty('--ov', G.pot.length > 1 ? Math.min(40, (170 - 78) / (G.pot.length - 1)) + 'px' : '40px');
   $('carryT').textContent = G.pot.length > 1 ? `持ちこし ${G.pot.length - 1}枚つき! 合わせて ${pts(potValue())}` : '';
   // のこりの点数カード(全部見せる。点数の順)
   const all = G.order.map((x, i) => ({ x, i })).sort((a, b) => a.x - b.x);
@@ -355,6 +363,7 @@ function renderPick() {
   $('rule2').classList.toggle('hide', G.n !== 2);
   if (G.n === 2) $('rule2').innerHTML = `2人のときは <b>${G.N - 2}・${G.N - 1}</b> に 0 が勝つ<small>(下剋上の回は 1・2)</small>`;
   drawBoard($('board'), G.status);
+  $('hand').style.setProperty('--cols', Math.min(7, Math.ceil(G.N / 2)));
   drawHand();
   show('scr-pick');
 }
@@ -374,22 +383,29 @@ function showIntro() {
   later(close, 2200 + (G.pot.length - 1) * 180);
 }
 
+// 手札を作り直す(手札が変わったとき・送ったとき)。タップで選ぶだけのときは markHand だけ(速い)
 function drawHand() {
+  const me = meP();
+  $('hand').innerHTML = me.hand.map(c => coaster(c)).join('');
+  for (const el of $('hand').querySelectorAll('.co')) {
+    el.onclick = () => { if (G.sent) return; G.pick = +el.dataset.n; markHand(); };
+  }
+  markHand();
+}
+function markHand() {
   const me = meP();
   const sent = !!G.sent;
   $('hand').classList.toggle('sent', sent);
-  $('hand').innerHTML = me.hand.map(c => coaster(c)).join('');
-  for (const el of $('hand').querySelectorAll('.co')) {
-    if (+el.dataset.n === G.pick) el.classList.add('sel');
-    el.onclick = () => { if (G.sent) return; G.pick = +el.dataset.n; drawHand(); };
-  }
+  for (const el of $('hand').querySelectorAll('.co')) el.classList.toggle('sel', +el.dataset.n === G.pick);
   // 自分の特殊カード(タップで使う / やめる)
   const ms = $('mysp');
-  if (!me.sp) { ms.innerHTML = ''; ms.onclick = null; }
+  if (!me.sp) { ms.innerHTML = ''; ms.onclick = null; ms.className = 'mysp'; }
   else {
-    ms.className = 'mysp' + (me.spUsed ? ' used' : G.useSp ? ' on' : '');
-    ms.innerHTML = `${spHtml(me.sp)}<div class="lb">${me.spUsed ? '使った' : G.useSp ? '使う!' : 'タップで使う'}</div>`;
-    ms.onclick = me.spUsed || sent ? null : () => { G.useSp = !G.useSp; drawHand(); };
+    const cls = 'mysp' + (me.spUsed ? ' used' : G.useSp ? ' on' : '');
+    const html = `${spHtml(me.sp)}<div class="lb">${me.spUsed ? '使った' : G.useSp ? '使う!' : 'タップで使う'}</div>`;
+    if (ms.className !== cls) ms.className = cls;
+    if (ms.dataset.h !== html) { ms.innerHTML = html; ms.dataset.h = html; }
+    ms.onclick = me.spUsed || sent ? null : () => { G.useSp = !G.useSp; markHand(); };
   }
   const b = $('btnGo');
   b.disabled = G.pick === null || sent;
